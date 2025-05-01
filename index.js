@@ -1,337 +1,159 @@
-const mysql = require('mysql2')
 const express = require("express");
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
 const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
 
+// ✅ Replace with your MongoDB Atlas URI
+const mongoURI = "mongodb+srv://ashutosh9655:Ashu9645@cluster0.vjrn8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-app.use(bodyParser.urlencoded({extended:true}))
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => {
+    console.log("MongoDB connected");
+}).catch(err => {
+    console.error("MongoDB connection error:", err);
+});
 
+// ✅ Customer Schema
+const customerSchema = new mongoose.Schema({
+    name: String,
+    email: { type: String, unique: true },
+    phone: String,
+    place: String,
+    noOfPeople: Number,
+    days: Number,
+    roomId: Number,
+    price: Number
+});
 
-const db = mysql.createConnection({
-    user: 'root',
-    password:'Password@492004',
-    database: 'HOTEL' 
-})
+const Customer = mongoose.model('Customer', customerSchema);
 
-db.connect(()=>{
-    console.log("db connected");
-    
-    let q = 'CREATE DATABASE IF NOT EXISTS HOTEL'
-
-    db.query(q, (err, res)=>{
-        // if(err)
-        // console.log(err);
-        // else console.log(res);
-    })
-
-
-    q = 'USE hotel';
-    db.query(q);
-
-    q = `CREATE TABLE IF NOT EXISTS customer(
-        name VARCHAR(20),
-        email VARCHAR(20),
-        phone VARCHAR(20),
-        place VARCHAR(20),
-        noOfPeople INT,
-        days INT,
-        roomId INT,
-        price INT
-    )`
-
-    db.query(q, (err, res)=>{
-        // if(err) console.log(err);
-        // else console.log(res);
-        
-        
-    });
-
-})
-
-
-app.get('/', (req, res)=>{
+// Home Page
+app.get('/', (req, res) => {
     return res.send(`
-        <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <div style="display: flex; gap: 2rem; position: absolute; transform: translate(-50%, -50%); top: 50%; left: 50%;">
-        <a href="create">Add cutomer</a>
-        <a href="delete">delete cutomer</a>
-        <a href="update">Update user</a>
-        <a href="read">Get user data</a>
-    </div>
-</body>
-</html>
-        `);
-})
+        <html><body>
+        <div style="display:flex;gap:2rem;position:absolute;transform:translate(-50%,-50%);top:50%;left:50%;">
+            <a href="create">Add customer</a>
+            <a href="delete">Delete customer</a>
+            <a href="update">Update user</a>
+            <a href="read">Get user data</a>
+        </div>
+        </body></html>
+    `);
+});
 
-
-app.get('/create', (req, res)=>{
+// Create Customer Form
+app.get('/create', (req, res) => {
     return res.send(`
-        <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <div style="position: absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
-        <form style="display: flex; gap: 2rem; flex-direction:column;" action="/createCustomer" method="POST">
-        <div>
-            <label for="name">name</label>
-            <input type="text" name="name" id="name">
-        </div>
-        <div>
-            <label for="email">email</label>
-            <input type="text" name="email" id="email">
-        </div>
-        <div>
-            <label for="phone">phone</label>
-            <input type="text" name="phone" id="phone">
-        </div>
-        <div>
-            <label for="place">place</label>
-            <input type="text" name="place" id="place">
-        </div>
-        <div>
-            <label for="noOfPeople">no Of people</label>
-            <input type="number" name="noOfPeople" id="noOfPeople">
-        </div>
-        <div>
-            <label for="days">days</label>
-            <input type="number" name="days" id="days">
-        </div>
-        <div>
-            <label for="roomId">roomId</label>
-            <input type="number" name="roomId" id="roomId">
-        </div>
-        <div>
-            <label for="price">price</label>
-            <input type="number" name="price" id="price">
-        </div>
-        <button type="submit">Submit</button>
-    </form>
-    </div>
-</body>
-</html>
-        `);
-})
-
-
-function insertInToTable(name, email, phone, place, noOfPeople, days, roomId, price){
-    const q = `
-        INSERT INTO customer 
-        (name, email, phone, place, noOfPeople, days, roomId, price)
-        VALUES (?,?,?,?,?,?,?,?)
-    `
-
-    db.query(q, [name, email, phone, place, noOfPeople, days, roomId, price], (err, res)=>{
-        if(err){
-            console.log(err);
-        } else{
-            console.log(res);
-        }
-    })
-}
-
-
-
-app.post('/createCustomer', (req, res)=>{
-    console.log(req.body);
-
-    const {name, email, phone, place, noOfPeople, days, roomId, price} = req.body;
-
-    const total = noOfPeople*price*days;
-    
-    insertInToTable(name, email, phone, place, noOfPeople, days, roomId, price);
-
-    return res.send(`<h1>Your total is ${total}<h1>`)
-    
-})
-
-
-
-
-app.get('/delete', (req, res)=>{
-    res.send(
-       `
-       <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <div>
-        <form action="/deleteCustomer" method="post">
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email">
-            <button type="submit"> submit</button>
+        <html><body>
+        <form action="/createCustomer" method="POST" style="display:flex;flex-direction:column;gap:1rem;">
+            <input name="name" placeholder="Name" required />
+            <input name="email" placeholder="Email" required />
+            <input name="phone" placeholder="Phone" />
+            <input name="place" placeholder="Place" />
+            <input name="noOfPeople" placeholder="No of People" type="number" />
+            <input name="days" placeholder="Days" type="number" />
+            <input name="roomId" placeholder="Room ID" type="number" />
+            <input name="price" placeholder="Price" type="number" />
+            <button type="submit">Submit</button>
         </form>
-    </div>
-</body>
-</html>
-        `
-    )
-})
+        </body></html>
+    `);
+});
 
+app.post('/createCustomer', async (req, res) => {
+    const { name, email, phone, place, noOfPeople, days, roomId, price } = req.body;
+    const total = noOfPeople * price * days;
 
-function deleteFromTable({email}){
-    const q = 'DELETE FROM customer WHERE email = ?'
-    let f = 0;
-    db.query(q, [email], (err, res)=>{
-        if(err){
-            console.log(err);
-        } else{
-            console.log("user deleted successfully");
-            f=1;
-        }
-    })
+    try {
+        await Customer.create({ name, email, phone, place, noOfPeople, days, roomId, price });
+        res.send(`<h1>Your total is ${total}</h1>`);
+    } catch (err) {
+        console.error(err);
+        res.send(`<h1>Error creating customer</h1>`);
+    }
+});
 
-    return f;
-}
+// Delete Form
+app.get('/delete', (req, res) => {
+    res.send(`
+        <html><body>
+        <form action="/deleteCustomer" method="POST">
+            <input name="email" type="email" placeholder="Email" required />
+            <button type="submit">Delete</button>
+        </form>
+        </body></html>
+    `);
+});
 
+app.post('/deleteCustomer', async (req, res) => {
+    const { email } = req.body;
+    try {
+        await Customer.deleteOne({ email });
+        res.send("<h1>User deleted successfully</h1>");
+    } catch (err) {
+        console.error(err);
+        res.send("<h1>Error deleting user</h1>");
+    }
+});
 
-app.post('/deleteCustomer', (req, res)=>{
-    deleteFromTable(req.body);
-    res.send("<h1>User deleted succesffulyy</h1>")
-})
+// Update Form
+app.get('/update', (req, res) => {
+    res.send(`
+        <html><body>
+        <form action="/updateCustomer" method="POST" style="display:flex;flex-direction:column;gap:1rem;">
+            <input name="email" placeholder="Email (used to identify user)" required />
+            <input name="name" placeholder="New Name" />
+            <input name="phone" placeholder="New Phone" />
+            <input name="place" placeholder="New Place" />
+            <input name="noOfPeople" type="number" placeholder="New No of People" />
+            <input name="days" type="number" placeholder="New Days" />
+            <input name="roomId" type="number" placeholder="New Room ID" />
+            <input name="price" type="number" placeholder="New Price" />
+            <button type="submit">Update</button>
+        </form>
+        </body></html>
+    `);
+});
 
-app.get('/update', (req, res)=>{
-    return res.send(`
-        <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <div style="position: absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
-        <form style="display: flex; gap: 2rem; flex-direction:column;" action="/updateCustomer" method="POST">
-        <div>
-            <label for="name">name</label>
-            <input type="text" name="name" id="name">
-        </div>
-        <div>
-            <label for="email">email</label>
-            <input type="text" name="email" id="email">
-        </div>
-        <div>
-            <label for="phone">phone</label>
-            <input type="text" name="phone" id="phone">
-        </div>
-        <div>
-            <label for="place">place</label>
-            <input type="text" name="place" id="place">
-        </div>
-        <div>
-            <label for="noOfPeople">no Of people</label>
-            <input type="number" name="noOfPeople" id="noOfPeople">
-        </div>
-        <div>
-            <label for="days">days</label>
-            <input type="number" name="days" id="days">
-        </div>
-        <div>
-            <label for="roomId">roomId</label>
-            <input type="number" name="roomId" id="roomId">
-        </div>
-        <div>
-            <label for="price">price</label>
-            <input type="number" name="price" id="price">
-        </div>
-        <button type="submit">Update</button>
-    </form>
-    </div>
-</body>
-</html>
-        `);
-})
+app.post('/updateCustomer', async (req, res) => {
+    const { email, ...updates } = req.body;
+    try {
+        await Customer.updateOne({ email }, { $set: updates });
+        res.send("<h1>Details updated successfully</h1>");
+    } catch (err) {
+        console.error(err);
+        res.send("<h1>Error updating customer</h1>");
+    }
+});
 
-function updateCustomerIntoTabel({name, email, phone, place, noOfPeople, days, roomId, price}){
-    const q = `
-        UPDATE customer
-        SET name=?, email=?, phone=?, place=?, noOfPeople=?, days=?, roomId=?, price=?
-       WHERE email = ?
-    `
-    console.log("hello", name, email, phone, place, noOfPeople, days, roomId, price,"fone");
-    
-    db.query(q, [name, email, phone, place, noOfPeople, days, roomId, price, email], (err, res)=>{
-        if(err){
-            console.log("err: ", err);
-        } else{
-            console.log("res: ", res);
-        }
-    })
-}
+// Read Form
+app.get('/read', (req, res) => {
+    res.send(`
+        <html><body>
+        <form action="/readCustomer" method="POST">
+            <input name="email" placeholder="Email" required />
+            <button type="submit">Read</button>
+        </form>
+        </body></html>
+    `);
+});
 
+app.post('/readCustomer', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const customer = await Customer.findOne({ email });
+        if (!customer) return res.send("<h1>No customer found</h1>");
+        res.send(`<pre>${JSON.stringify(customer, null, 2)}</pre>`);
+    } catch (err) {
+        console.error(err);
+        res.send("<h1>Error retrieving customer</h1>");
+    }
+});
 
-app.post('/updateCustomer', (req, res)=>{
-    console.log("body: ", req.body);
-    
-    updateCustomerIntoTabel(req.body);
-    res.send("<h1>details updated successfully</h1>");
-
-})
-
-
-function getDate({email}, res){
-    console.log(email);
-    
-    
-}
-
-app.get('/read', (req, res)=>{
-    res.send(
-        `
-        <!DOCTYPE html>
- <html lang="en">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>Document</title>
- </head>
- <body>
-     <div>
-         <form action="/readCustomer" method="post">
-             <label for="email">Email</label>
-             <input type="email" name="email" id="email">
-             <button type="submit"> submit</button>
-         </form>
-     </div>
- </body>
- </html>
-         `);
-})
-
-
-app.post('/readCustomer', (req, res)=>{
-    const {email} = req.body;
-    const q = `
-        SELECT * FROM customer WHERE email = ?
-    `;
-
-    const data = db.query(q, [email], (err, resu)=>{
-        if(err) console.log(err);
-        else res.send(resu[0]);
-    });
-    
-})
-
-
-app.listen(8000, ()=>{
-    console.log("server lostening on  http://localhost:8000");
-})
-
-
-// insertInToTable('a', "a@gmail.com", 1, "a", 1, 1, 1, 100);
-// insertInToTable('b', "b@gmail.com", 2, "b", 2, 2, 2, 200);
-// insertInToTable('c', "c@gmail.com", 3, "c", 3, 3, 3, 200);
+app.listen(8000, () => {
+    console.log("Server listening on http://localhost:8000");
+});
