@@ -6,7 +6,7 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // ✅ Replace with your MongoDB Atlas URI
-const mongoURI = "mongodb+srv://ashutosh9655:Ashu9645@cluster0.vjrn8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const mongoURI = "";
 
 mongoose.connect(mongoURI, {
     useNewUrlParser: true,
